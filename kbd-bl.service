@@ -1,0 +1,14 @@
+[Unit]
+Description=Keyboard Backlight Controller
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/path/to/keyboard_backlight
+Restart=no
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
