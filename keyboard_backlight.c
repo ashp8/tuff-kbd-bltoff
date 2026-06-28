@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,15 +8,14 @@
 #include <libevdev-1.0/libevdev/libevdev.h>
 #include <time.h>
 
-#define IDLE_TIME 15 // Time in seconds
-#define KEYBOARD_NAME "AT Translated Set 2 keyboard" // Replace with your keyboard's name
+#define IDLE_TIME 30
+#define KEYBOARD_NAME "AT Translated Set 2 keyboard"
 
 int backlight_on = 0;
 int backlight_fd;
 int event_fd;
 time_t last_event_time;
 
-// Function to initialize the keyboard backlight file descriptor
 int init_backlight_fd(const char *backlight_path) {
     int fd = open(backlight_path, O_WRONLY);
     if (fd < 0) {
@@ -27,7 +25,6 @@ int init_backlight_fd(const char *backlight_path) {
     return fd;
 }
 
-// Function to find the event device for the keyboard
 int find_keyboard_event_device(const char *keyboard_name) {
     DIR *dir;
     struct dirent *entry;
@@ -62,7 +59,7 @@ int find_keyboard_event_device(const char *keyboard_name) {
                 if (strcmp(device_name, keyboard_name) == 0) {
                     libevdev_free(dev);
                     closedir(dir);
-                    return fd; // Found the correct device
+                    return fd;
                 }
             }
 
@@ -72,37 +69,34 @@ int find_keyboard_event_device(const char *keyboard_name) {
     }
 
     closedir(dir);
-    return -1; // Keyboard device not found
+    return -1;
 }
 
-// Function to turn on the keyboard backlight
 void turn_on_backlight() {
     if (backlight_on == 0) {
         if (write(backlight_fd, "1", 1) != 1) {
             perror("Failed to turn on backlight");
         }
         backlight_on = 1;
-		printf("Kyeboard backlight 1");
+        printf("Keyboard backlight 1\n");
     }
 }
 
-// Function to turn off the keyboard backlight
 void turn_off_backlight() {
     if (backlight_on == 1) {
         if (write(backlight_fd, "0", 1) != 1) {
             perror("Failed to turn off backlight");
         }
         backlight_on = 0;
-		printf("Kyeboard backlight 0");
+        printf("Keyboard backlight 0\n");
     }
 }
 
 int main(int argc, char *argv[]) {
     struct libevdev *dev = NULL;
     int rc;
-	printf("hhello world!");
+    printf("hello world!\n");
 
-    // Initialize the file descriptors
     const char *backlight_path = "/sys/class/leds/asus::kbd_backlight/brightness";
     const char *keyboard_name = KEYBOARD_NAME;
 
@@ -127,13 +121,12 @@ int main(int argc, char *argv[]) {
         rc = libevdev_next_event(dev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
 
         if (rc == 0) {
-            if (ev.type == EV_KEY && ev.value == 1) { // Key pressed
+            if (ev.type == EV_KEY && (ev.value == 1 || ev.value == 2)) { 
                 turn_on_backlight();
                 last_event_time = time(NULL);
             }
         }
 
-        // Check idle time
         if (backlight_on == 1) {
             time_t current_time = time(NULL);
             if (difftime(current_time, last_event_time) >= IDLE_TIME) {
@@ -141,14 +134,12 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        usleep(100000); // Sleep for 100ms
+        usleep(100000);
     }
 
-    // Clean up
     libevdev_free(dev);
     close(event_fd);
     close(backlight_fd);
 
     return 0;
 }
-
